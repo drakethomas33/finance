@@ -3,6 +3,7 @@ bpython==0.13
 django-braces==1.4.0
 dj-database-url==0.3.0
 django-model-utils==2.0.3
+django-money==0.4.1
 dj-static==0.0.5
 logutils==0.3.3
 psycopg2==2.5.2
