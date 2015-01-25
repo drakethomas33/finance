@@ -10,6 +10,26 @@ from django.db import models
 from moneyed import Money
 
 
+def thingy(account_name):
+    account = Account.objects.get(name=account_name)
+    total = Money(account.initial.amount, 'GBP')
+    total_transactions = Money(0, 'GBP')
+    for month in Month.objects.all().order_by('start'):
+        trans_in = trans_out = transactions = Money(0, 'GBP')
+        for t in month.get_transactions(account_name=account_name):
+            if t.category.name == 'Transfers':
+                if t.amount.amount > 0:
+                    trans_in += t.amount
+                else:
+                    trans_out += t.amount
+            else:
+                transactions += t.amount
+        net_transferred = trans_in + trans_out
+        total += net_transferred + transactions
+        total_transactions += transactions
+        print transactions.amount, '    ', total_transactions.amount
+
+
 def net_worth():
     amount = Money(0, 'gbp')
     for t in Transaction.objects.all():
@@ -59,6 +79,9 @@ class Category(models.Model):
     name = models.CharField(max_length=64, unique=True)
     parent = models.ForeignKey('self', blank=True, null=True)
 
+    class Meta:
+        ordering = ['parent__name', 'name']
+
     def __unicode__(self):
         return self.name
 
@@ -79,8 +102,14 @@ class Month(TimeFramedModel):
     objects = MonthManager()
     closed = models.BooleanField(default=False)  # Accepting new transaction in this month?
 
-    def get_transactions(self):
-        return Transaction.objects.filter(date__gte=self.start, date__lte=self.end)
+    class Meta:
+        ordering = ['-start']
+
+    def get_transactions(self, account_name=None):
+        transactions = Transaction.objects.filter(date__gte=self.start, date__lte=self.end)
+        if account_name:
+            transactions = transactions.filter(account=Account.objects.get(name=account_name))
+        return transactions
 
 
 class TransactionManager(models.Manager):
@@ -97,12 +126,19 @@ class TransactionManager(models.Manager):
             if month.closed:
                 print 'month closed, not going further'
                 continue
-            account, created = Account.objects.get_or_create(name=row[2])
-            category, created = Category.objects.get_or_create(name=row[6].split('>')[-1].strip())
+            description = row[4]
+            category_name = row[6].split('>')[-1].strip()
+            if any([description.startswith('Transfer to'),
+                    description.startswith('ATM Withdrawal'),
+                    description.startswith('Transfer from')]) and category_name == 'Other':
+                category = Category.objects.get(name='Transfers')
+            else:
+                category, _ = Category.objects.get_or_create(name=category_name)
+            account, _ = Account.objects.get_or_create(name=row[2])
             Transaction.objects.create(
                 amount=Money(float(row[9].replace(',', '')), currency='GBP'),
                 date=date,
-                description=row[4],
+                description=description,
                 category=category,
                 account=account
             )

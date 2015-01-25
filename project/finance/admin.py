@@ -22,7 +22,12 @@ class AccountAdmin(admin.ModelAdmin):
 
 
 class CategoryAdmin(admin.ModelAdmin):
-    actions = []
+
+    def number_of_transactions(self, obj):
+        return obj.transaction_set.count()
+
+    list_display = ['name', 'parent', 'number_of_transactions']
+    list_filter = ['parent']
 
 admin.site.register(Transaction, TransactionAdmin)
 admin.site.register(Month, MonthAdmin)
