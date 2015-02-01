@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+
+{% block content %}
+<div id="area-chart"></div>
+<hr />
+<div id="pie-chart"></div>
+{% endblock content %}
+
+{% block extra_js %}
+<script src="{% static 'js/index.js' %}"></script>
+{% endblock extra_js %}

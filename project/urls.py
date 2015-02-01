@@ -10,6 +10,9 @@ admin.autodiscover()
 urlpatterns = patterns('',
     url(r'^$', 'project.finance.views.index'),
 
+    url(r'^api/account_totals/$', 'project.finance.views.account_totals'),
+    url(r'^api/categories_by_month/$', 'project.finance.views.categories_by_month'),
+
     # Examples:
     # url(r'^$', 'project.views.home', name='home'),
     # url(r'^project/', include('project.foo.urls')),
